@@ -1,5 +1,10 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include "Accelerometer.h"
+
+#define CLOCK_FREQUENCY 16000000
+#define FREQUENCY_LOWER_LIMIT 1
+#define FREQUENCY_UPPER_LIMIT 1000
 
 #define BUFFER_SIZE 32
 
@@ -9,37 +14,35 @@ volatile float buffer[3][BUFFER_SIZE];
 volatile bool bufferReady = true;
 volatile int bufferIndex = 0;
 
-void setSamplingFrequency();
+int counterStartValue;
+
+Accelerometer accelerometer;
+
+void setSamplingFrequency(int frequency);
 void printBuffer();
 
 void setup() {
-  Serial.begin(19200);
+  Serial.begin(115200);
 
-  Wire.begin();                      // Initialize comunication
-  Wire.beginTransmission(MPU);       // Start communication with MPU6050 // MPU=0x68
-  Wire.write(0x6B);                  // Talk to the register 6B
-  Wire.write(0x00);                  // Make reset - place a 0 into the 6B register
-  Wire.endTransmission(true);        //end the transmission
+  accelerometer.begin(MPU);
   
-  setSamplingFrequency();
+  setSamplingFrequency(40);
 }
 
 void loop() {
-// === Read acceleromter data === //
-  Wire.beginTransmission(MPU);
-  Wire.write(0x3B); // Start with register 0x3B (ACCEL_XOUT_H)
-  Wire.endTransmission(false);
-  Wire.requestFrom(MPU, 6, true); // Read 6 registers total, each axis value is stored in 2 registers
+  // === Read acceleromter data === //
+  struct accComp readings;
+  readings = accelerometer.getAcceleration();
 
   // //For a range of +-2g, we need to divide the raw values by 16384, according to the datasheet
-  AccX = (Wire.read() << 8 | Wire.read()) / 16384.0; // X-axis value
-  AccY = (Wire.read() << 8 | Wire.read()) / 16384.0; // Y-axis value
-  AccZ = (Wire.read() << 8 | Wire.read()) / 16384.0; // Z-axis value
+  AccX = readings.AccX; // X-axis value
+  AccY = readings.AccY; // Y-axis value
+  AccZ = readings.AccZ; // Z-axis value
 
   if (!bufferReady) { // Buffer is full.
     // Do something to the collected data.
     printBuffer();
-    delay(10000);
+    delay(5000);
 
     // Reset the buffer
     bufferIndex = 0;
@@ -47,24 +50,47 @@ void loop() {
   }
 }
 
-void setSamplingFrequency()
+void setSamplingFrequency(int frequency)
 {
   // The following are internal registers in ATmega328.
   // Internal interrupts (Timers) are used to keep track of time precisely.
 
-  // // Sampling frequency - 100Hz
+  // Adding lower and upper limits to frequency
+  if (frequency < FREQUENCY_LOWER_LIMIT) {
+    frequency = FREQUENCY_LOWER_LIMIT;
+  }
+  if (frequency > FREQUENCY_UPPER_LIMIT) {
+    frequency = FREQUENCY_UPPER_LIMIT;
+  }
+
   TCCR1A = 0;
   TCCR1B = 0;
-  TCNT1 = 45536;
-  TCCR1B |= (1 << CS11);
-  TIMSK1 |= (1 << TOIE1);
 
-  // // Sampling frequency - 1Hz
-  // TCCR1A = 0;
-  // TCCR1B = 0;
-  // TCNT1 = 3036;
-  // TCCR1B |= (1 << CS12);
-  // TIMSK1 |= (1 << TOIE1);
+  // Calculating suitable prescalar values.
+  int prescaler;
+  if (frequency <= 10) {
+    prescaler = 256;
+    TCCR1B |= (1 << CS12);
+  }
+  else if (frequency <= 50) {
+    prescaler = 64;
+    TCCR1B |= (1 << CS10) | (1 << CS11);
+  }
+  else if (frequency <= 500) {
+    prescaler = 8;
+    TCCR1B |= (1 << CS11);
+  }
+  else {
+    prescaler = 1;
+    TCCR1B |= (1 << CS10);
+  }
+
+  // Calculating the value the counter should start counting from.
+  counterStartValue = 65536 - CLOCK_FREQUENCY / prescaler / frequency;
+  TCNT1 = counterStartValue;
+
+  // Enabling timer interrupts.
+  TIMSK1 |= (1 << TOIE1);
 }
 
 ISR(TIMER1_OVF_vect)
@@ -80,8 +106,7 @@ ISR(TIMER1_OVF_vect)
     }
   }
 
-  TCNT1 = 45536;
-  // TCNT1 = 3036;
+  TCNT1 = counterStartValue;
 }
 
 void printBuffer() {
@@ -98,7 +123,7 @@ void printBuffer() {
   Serial.println();
 
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.print(buffer[1][i]);
+    Serial.print(buffer[2][i]);
     Serial.print(" ");
   }
   Serial.println();
