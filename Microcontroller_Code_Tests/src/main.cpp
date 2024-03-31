@@ -6,7 +6,7 @@
 #define FREQUENCY_LOWER_LIMIT 1
 #define FREQUENCY_UPPER_LIMIT 1000
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 64
 
 const int MPU = 0x68; // MPU6050 I2C address
 volatile float AccX = 0, AccY = 0, AccZ = 0;
@@ -27,7 +27,7 @@ void setup() {
 
   accelerometer.begin(MPU);
   
-  setSamplingFrequency(40);
+  setSamplingFrequency(10);
 }
 
 void loop() {
@@ -44,7 +44,7 @@ void loop() {
     // Do something to the collected data.
     // printBuffer();
     sendBuffer();
-    delay(5000);
+    // delay(5000);
 
     // Reset the buffer
     bufferIndex = 0;
