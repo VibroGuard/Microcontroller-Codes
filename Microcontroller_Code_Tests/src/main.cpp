@@ -6,7 +6,7 @@
 #define FREQUENCY_LOWER_LIMIT 1
 #define FREQUENCY_UPPER_LIMIT 1000
 
-#define BUFFER_SIZE 32
+#define BUFFER_SIZE 10
 
 const int MPU = 0x68; // MPU6050 I2C address
 volatile float AccX = 0, AccY = 0, AccZ = 0;
@@ -20,6 +20,7 @@ Accelerometer accelerometer;
 
 void setSamplingFrequency(int frequency);
 void printBuffer();
+void sendBuffer();
 
 void setup() {
   Serial.begin(115200);
@@ -41,7 +42,8 @@ void loop() {
 
   if (!bufferReady) { // Buffer is full.
     // Do something to the collected data.
-    printBuffer();
+    // printBuffer();
+    sendBuffer();
     delay(5000);
 
     // Reset the buffer
@@ -127,4 +129,21 @@ void printBuffer() {
     Serial.print(" ");
   }
   Serial.println();
+}
+
+void sendBuffer() {
+  Serial.println("x");
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    Serial.println(buffer[0][i]);
+  }
+
+  Serial.println("y");
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    Serial.println(buffer[1][i]);
+  }
+
+  Serial.println("z");
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    Serial.println(buffer[2][i]);
+  }
 }
