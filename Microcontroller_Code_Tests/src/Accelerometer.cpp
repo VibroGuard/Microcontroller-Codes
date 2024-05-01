@@ -35,38 +35,9 @@ struct accComp Accelerometer::getAcceleration() {
 
     struct accComp readings;
     
-    readings.AccX = accX;
-    readings.AccY = accY;
-    readings.AccZ = accZ;
+    readings.AccX = (uint8_t) map(accX * 100, -200, 200, 0, 255);
+    readings.AccY = (uint8_t) map(accY * 100, -200, 200, 0, 255);
+    readings.AccZ = (uint8_t) map(accZ * 100, -200, 200, 0, 255);
 
     return readings;
-}
-
-void Accelerometer::calibrateError() {
-    // We can call this funtion in the setup section to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial Monitor.
-    // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
-    // Read accelerometer values 200 times
-    int c = 0;
-    float errorX = 0, errorY = 0;
-
-    while (c < 200) {
-        struct accComp readings = getAcceleration();
-        // Sum all readings
-        errorX += + ((atan((readings.AccY) / sqrt(pow((readings.AccX), 2) + pow((readings.AccZ), 2))) * 180 / PI));
-        errorY += + ((atan(-1 * (readings.AccX) / sqrt(pow((readings.AccY), 2) + pow((readings.AccZ), 2))) * 180 / PI));
-        c++;
-    }
-
-    //Divide the sum by 200 to get the error value
-    accErrorX = errorX / 200;
-    accErrorY = errorY / 200;
-}
-
-float Accelerometer::getRoll() {
-    return (atan(accY / sqrt(pow(accX, 2) + pow(accZ, 2))) * 180 / PI) - accErrorX;
-    
-}
-
-float Accelerometer::getPitch() {
-    return (atan(-1 * accX / sqrt(pow(accY, 2) + pow(accZ, 2))) * 180 / PI) - accErrorY;
 }

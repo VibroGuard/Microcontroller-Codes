@@ -6,12 +6,12 @@
 #define FREQUENCY_LOWER_LIMIT 1
 #define FREQUENCY_UPPER_LIMIT 1000
 
-#define BUFFER_SIZE 512
-#define SAMPLING_FREQUENCY 250
+#define BUFFER_SIZE 256
+#define SAMPLING_FREQUENCY 200
 
 const int MPU = 0x68; // MPU6050 I2C address
-volatile float AccX = 0, AccY = 0, AccZ = 0;
-volatile float buffer[3][BUFFER_SIZE];
+volatile uint8_t AccX = 0, AccY = 0, AccZ = 0;
+volatile uint8_t buffer[3][BUFFER_SIZE];
 volatile bool bufferReady = true;
 volatile int bufferIndex = 0;
 
@@ -112,39 +112,19 @@ ISR(TIMER1_OVF_vect)
   TCNT1 = counterStartValue;
 }
 
-void printBuffer() {
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.print(buffer[0][i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.print(buffer[1][i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.print(buffer[2][i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-}
-
 void sendBuffer() {
   Serial.println("x");
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(buffer[0][i]);
+    Serial.println(map(buffer[0][i], 0, 255, -200, 200)/ 100.0);
   }
 
   Serial.println("y");
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(buffer[1][i]);
+    Serial.println(map(buffer[1][i], 0, 255, -200, 200)/ 100.0);
   }
 
   Serial.println("z");
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(buffer[2][i]);
+    Serial.println(map(buffer[2][i], 0, 255, -200, 200)/ 100.0);
   }
 }
