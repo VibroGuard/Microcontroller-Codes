@@ -9,6 +9,9 @@
 #define BUFFER_SIZE 256
 #define SAMPLING_FREQUENCY 200
 
+#define ALERT_PIN_1 8
+#define ALERT_PIN_2 9
+
 const int MPU = 0x68; // MPU6050 I2C address
 volatile uint8_t AccX = 0, AccY = 0, AccZ = 0;
 volatile uint8_t buffer[3][BUFFER_SIZE];
@@ -25,6 +28,9 @@ void sendBuffer();
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(ALERT_PIN_1, OUTPUT);
+  pinMode(ALERT_PIN_2, OUTPUT);
 
   accelerometer.begin(MPU);
   
@@ -50,6 +56,23 @@ void loop() {
     // Reset the buffer
     bufferIndex = 0;
     bufferReady = true;
+  }
+
+  if (Serial.available())
+  {
+    const int buffSize = 10;
+    char inputBuffer[buffSize];
+    Serial.readStringUntil('\n').toCharArray(inputBuffer, buffSize);
+
+    String inputSerial = String(inputBuffer);
+
+    if (inputSerial == "ALERT") {
+      // giveAlert();
+      digitalWrite(ALERT_PIN_1, HIGH);
+    }
+    else if (inputSerial == "NO_ALERT") {
+      digitalWrite(ALERT_PIN_1, LOW);
+    }
   }
 }
 
