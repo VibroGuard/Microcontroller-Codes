@@ -1,0 +1,1 @@
+float map_range(float value, float prevLimitLower, float prevLimitUpper, float nextLimitLower, float nextLimitUpper);

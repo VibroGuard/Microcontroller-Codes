@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "Accelerometer.h"
+#include "auxiliary_functions.h"
 
 #define CLOCK_FREQUENCY 16000000
 #define FREQUENCY_LOWER_LIMIT 1
@@ -177,17 +178,17 @@ ISR(TIMER1_OVF_vect)
 void sendBuffer() {
   Serial.println("x");
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(map(buffer[0][i], 0, 255, -200, 200)/ 100.0);
+    Serial.println(map_range(buffer[0][i], 0, 255, -200, 200)/ 100.0);
   }
 
   Serial.println("y");
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(map(buffer[1][i], 0, 255, -200, 200)/ 100.0);
+    Serial.println(map_range(buffer[1][i], 0, 255, -200, 200)/ 100.0);
   }
 
   Serial.println("z");
   for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(map(buffer[2][i], 0, 255, -200, 200)/ 100.0);
+    Serial.println(map_range(buffer[2][i], 0, 255, -200, 200)/ 100.0);
   }
 }
 

@@ -5,6 +5,7 @@
 #include <Wire.h>
 
 #include "Accelerometer.h"
+#include "auxiliary_functions.h"
 
 using namespace std;
 
@@ -35,9 +36,9 @@ struct accComp Accelerometer::getAcceleration() {
 
     struct accComp readings;
     
-    readings.AccX = (uint8_t) map(accX * 100, -200, 200, 0, 255);
-    readings.AccY = (uint8_t) map(accY * 100, -200, 200, 0, 255);
-    readings.AccZ = (uint8_t) map(accZ * 100, -200, 200, 0, 255);
+    readings.AccX = (uint8_t) map_range(accX * 100, -200, 200, 0, 255);
+    readings.AccY = (uint8_t) map_range(accY * 100, -200, 200, 0, 255);
+    readings.AccZ = (uint8_t) map_range(accZ * 100, -200, 200, 0, 255);
 
     return readings;
 }
