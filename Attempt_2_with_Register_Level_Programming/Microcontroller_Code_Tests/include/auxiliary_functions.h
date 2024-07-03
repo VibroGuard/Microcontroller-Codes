@@ -5,6 +5,6 @@
 #include <sstream>
 
 float map_range(float value, float prevLimitLower, float prevLimitUpper, float nextLimitLower, float nextLimitUpper);
-const char* to_string(float value);
+const char *to_string(float value);
 
 #endif

@@ -3,9 +3,13 @@
 
 #include <avr/io.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-void UART0_init(uint32_t baud_rate);
-void UART0_transmit(unsigned char data);
-void UART0_transmit_string(const char* str);
+void UART_init(uint32_t baud_rate);
+void UART_transmit(unsigned char data);
+void UART_transmit_string(const char *str);
+bool UART_available(void);
+char UART_receive(void);
+char *UART_receive_string(void);
 
 #endif

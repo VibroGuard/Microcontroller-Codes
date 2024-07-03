@@ -12,6 +12,8 @@
 #define BUFFER_SIZE 256
 #define SAMPLING_FREQUENCY 200
 
+using namespace std;
+
 const int MPU = 0x68; // MPU6050 I2C address
 
 volatile uint8_t AccX = 0, AccY = 0, AccZ = 0;
@@ -41,7 +43,7 @@ int main()
 
 void setup()
 {
-  UART0_init(115200);
+  UART_init(115200);
 
   // Pin type declaration.
   PORTB = PORTB | (1 << PORTB0);
@@ -63,24 +65,21 @@ void loop()
   AccZ = readings.AccZ; // Z-axis value
 
   if (!bufferReady)
-  { // Buffer is full.
-    // Do something to the collected data.
-    // printBuffer();
+  {
+    // Buffer is full. Send data to the computer.
     sendBuffer();
-    // delay(5000);
 
     // Reset the buffer
     bufferIndex = 0;
     bufferReady = true;
   }
 
-  if (Serial.available())
+  if (UART_available())
   {
-    const int buffSize = 10;
-    char inputBuffer[buffSize];
+    char *inputBuffer = NULL;
 
-    // TODO - REMOVE USE OF "SERIAL".
     // Serial.readStringUntil('\n').toCharArray(inputBuffer, buffSize);
+    inputBuffer = UART_receive_string();
 
     string inputSerial = string(inputBuffer);
 
@@ -164,21 +163,21 @@ ISR(TIMER1_OVF_vect)
 
 void sendBuffer()
 {
-  Serial.println("x");
+  UART_transmit_string("x");
   for (int i = 0; i < BUFFER_SIZE; i++)
   {
-    UART0_transmit_string(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
+    UART_transmit_string(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
   }
 
-  Serial.println("y");
+  UART_transmit_string("y");
   for (int i = 0; i < BUFFER_SIZE; i++)
   {
-    UART0_transmit_string(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
+    UART_transmit_string(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
   }
 
-  Serial.println("z");
+  UART_transmit_string("z");
   for (int i = 0; i < BUFFER_SIZE; i++)
   {
-    UART0_transmit_string(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
+    UART_transmit_string(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
   }
 }
