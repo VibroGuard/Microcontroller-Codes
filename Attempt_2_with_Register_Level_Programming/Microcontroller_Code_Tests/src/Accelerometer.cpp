@@ -1,34 +1,49 @@
-#include <Arduino.h>
-#include <StandardCplusplus.h>
-#include <vector>
-#include <cmath>
-#include <Wire.h>
-
 #include "Accelerometer.h"
 #include "auxiliary_functions.h"
+#include "i2c_communication.h"
 
-using namespace std;
 
-void Accelerometer::begin(int addr) {
-    i2c_address = addr;
+// MPU6050 registers
+#define MPU6050_REG_PWR_MGMT_1 0x6B
+#define MPU6050_REG_ACCEL_XOUT_H 0x3B
 
-    Wire.begin();                      // Initialize comunication
-    Wire.beginTransmission(i2c_address);       // Start communication with MPU6050
-    Wire.write(0x6B);                  // Talk to the register 6B
-    Wire.write(0x00);                  // Make reset - place a 0 into the 6B register
-    Wire.endTransmission(true);        //end the transmission
+// MPU6050 functions
+void mpu6050_init(int i2c_address);
+
+// Initializing I2C Connection and MPU6050
+void Accelerometer::begin(int i2c_address) {
+    i2c_init(); // Initialize I2C
+    
+    i2c_start();
+    i2c_write(i2c_address << 1); // Write mode
+    i2c_write(MPU6050_REG_PWR_MGMT_1);
+    i2c_write(0); // Clear sleep mode bit
+    i2c_stop();
 }
 
 void Accelerometer::readAcceleration() {
-    Wire.beginTransmission(i2c_address);
-    Wire.write(0x3B); // Start with register 0x3B (ACCEL_XOUT_H)
-    Wire.endTransmission(false);
-    Wire.requestFrom(i2c_address, 6, true); // Read 6 registers total, each axis value is stored in 2 registers
+    int16_t rawAccX, rawAccY, rawAccZ;
 
-    // //For a range of +-2g, we need to divide the raw values by 16384, according to the datasheet
-    accX = (Wire.read() << 8 | Wire.read()) / 16384.0;
-    accY = (Wire.read() << 8 | Wire.read()) / 16384.0;
-    accZ = (Wire.read() << 8 | Wire.read()) / 16384.0;
+    i2c_start();
+    i2c_write(i2c_address << 1); // Write mode
+    i2c_write(MPU6050_REG_ACCEL_XOUT_H);
+    i2c_stop();
+
+    i2c_start();
+    i2c_write((i2c_address << 1) | 1); // Read mode
+
+    // Read raw data
+    rawAccX = (i2c_read(true) << 8) | (i2c_read(true));
+    rawAccY = (i2c_read(true) << 8) | (i2c_read(true));
+    rawAccZ = (i2c_read(true) << 8) | (i2c_read(false));
+
+    i2c_stop();
+
+    // Convert raw data to g-force (for ±2g range)
+    const float accScale = 16384.0;
+    accX = (float) rawAccX / accScale;
+    accY = (float) rawAccY / accScale;
+    accZ = (float) rawAccZ / accScale;
 }
 
 struct accComp Accelerometer::getAcceleration() {
@@ -36,6 +51,7 @@ struct accComp Accelerometer::getAcceleration() {
 
     struct accComp readings;
     
+    // Map accelerometer values to 0-255 range
     readings.AccX = (uint8_t) map_range(accX * 100, -200, 200, 0, 255);
     readings.AccY = (uint8_t) map_range(accY * 100, -200, 200, 0, 255);
     readings.AccZ = (uint8_t) map_range(accZ * 100, -200, 200, 0, 255);

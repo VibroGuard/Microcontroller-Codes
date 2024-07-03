@@ -1,7 +1,9 @@
-#include <Arduino.h>
-#include <Wire.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
 #include "Accelerometer.h"
 #include "auxiliary_functions.h"
+#include "uart_communication.h"
 
 #define CLOCK_FREQUENCY 16000000
 #define FREQUENCY_LOWER_LIMIT 1
@@ -10,10 +12,8 @@
 #define BUFFER_SIZE 256
 #define SAMPLING_FREQUENCY 200
 
-#define ALERT_PIN_1 8
-#define ALERT_PIN_2 9
-
 const int MPU = 0x68; // MPU6050 I2C address
+
 volatile uint8_t AccX = 0, AccY = 0, AccZ = 0;
 volatile uint8_t buffer[3][BUFFER_SIZE];
 volatile bool bufferReady = true;
@@ -26,56 +26,33 @@ Accelerometer accelerometer;
 void setSamplingFrequency(int frequency);
 void printBuffer();
 void sendBuffer();
+void setup();
+void loop();
 
+int main()
+{
+  setup();
 
-// Function to initialize UART0
-void UART0_init(uint32_t baud_rate) {
-    uint16_t ubrr_value = (F_CPU / (16 * baud_rate)) - 1;
-    
-    // Set baud rate
-    UBRR0H = (ubrr_value >> 8);
-    UBRR0L = ubrr_value;
+  while (true)
+    loop();
 
-    // Enable receiver and transmitter
-    UCSR0B = (1 << RXEN0) | (1 << TXEN0);
-    
-    // Set frame format: 8 data bits, 1 stop bit, no parity
-    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+  return 0;
 }
 
-
-// Function to transmit a character
-void UART0_transmit(unsigned char data) {
-    // Wait for empty transmit buffer
-    while (!(UCSR0A & (1 << UDRE0)));
-    
-    // Put data into buffer, sends the data
-    UDR0 = data;
-}
-
-
-// Function to transmit a string
-void UART0_transmit_string(const char* str) {
-    while (*str) {
-        UART0_transmit(*str++);
-    }
-}
-
-
-
-
-void setup() {
+void setup()
+{
   UART0_init(115200);
 
-  pinMode(ALERT_PIN_1, OUTPUT);
-  pinMode(ALERT_PIN_2, OUTPUT);
+  // Pin type declaration.
+  PORTB = PORTB | (1 << PORTB0);
 
   accelerometer.begin(MPU);
-  
+
   setSamplingFrequency(SAMPLING_FREQUENCY);
 }
 
-void loop() {
+void loop()
+{
   // === Read acceleromter data === //
   struct accComp readings;
   readings = accelerometer.getAcceleration();
@@ -85,7 +62,8 @@ void loop() {
   AccY = readings.AccY; // Y-axis value
   AccZ = readings.AccZ; // Z-axis value
 
-  if (!bufferReady) { // Buffer is full.
+  if (!bufferReady)
+  { // Buffer is full.
     // Do something to the collected data.
     // printBuffer();
     sendBuffer();
@@ -100,21 +78,22 @@ void loop() {
   {
     const int buffSize = 10;
     char inputBuffer[buffSize];
-    Serial.readStringUntil('\n').toCharArray(inputBuffer, buffSize);
 
-    String inputSerial = String(inputBuffer);
+    // TODO - REMOVE USE OF "SERIAL".
+    // Serial.readStringUntil('\n').toCharArray(inputBuffer, buffSize);
 
-    if (inputSerial == "ALERT") {
-      // giveAlert();
-      digitalWrite(ALERT_PIN_1, HIGH);
+    string inputSerial = string(inputBuffer);
+
+    if (inputSerial == "ALERT")
+    {
+      DDRB = (1 << DDB0);
     }
-    else if (inputSerial == "NO_ALERT") {
-      digitalWrite(ALERT_PIN_1, LOW);
+    else if (inputSerial == "NO_ALERT")
+    {
+      DDRB = (0 << DDB0);
     }
   }
 }
-
-
 
 void setSamplingFrequency(int frequency)
 {
@@ -122,10 +101,12 @@ void setSamplingFrequency(int frequency)
   // Internal interrupts (Timers) are used to keep track of time precisely.
 
   // Adding lower and upper limits to frequency
-  if (frequency < FREQUENCY_LOWER_LIMIT) {
+  if (frequency < FREQUENCY_LOWER_LIMIT)
+  {
     frequency = FREQUENCY_LOWER_LIMIT;
   }
-  if (frequency > FREQUENCY_UPPER_LIMIT) {
+  if (frequency > FREQUENCY_UPPER_LIMIT)
+  {
     frequency = FREQUENCY_UPPER_LIMIT;
   }
 
@@ -134,19 +115,23 @@ void setSamplingFrequency(int frequency)
 
   // Calculating suitable prescalar values.
   int prescaler;
-  if (frequency <= 10) {
+  if (frequency <= 10)
+  {
     prescaler = 256;
     TCCR1B |= (1 << CS12);
   }
-  else if (frequency <= 50) {
+  else if (frequency <= 50)
+  {
     prescaler = 64;
     TCCR1B |= (1 << CS10) | (1 << CS11);
   }
-  else if (frequency <= 500) {
+  else if (frequency <= 500)
+  {
     prescaler = 8;
     TCCR1B |= (1 << CS11);
   }
-  else {
+  else
+  {
     prescaler = 1;
     TCCR1B |= (1 << CS10);
   }
@@ -161,13 +146,15 @@ void setSamplingFrequency(int frequency)
 
 ISR(TIMER1_OVF_vect)
 {
-  if (bufferReady) {
+  if (bufferReady)
+  {
     buffer[0][bufferIndex] = AccX;
     buffer[1][bufferIndex] = AccY;
     buffer[2][bufferIndex] = AccZ;
 
     bufferIndex++;
-    if (bufferIndex == BUFFER_SIZE) {
+    if (bufferIndex == BUFFER_SIZE)
+    {
       bufferReady = false;
     }
   }
@@ -175,21 +162,23 @@ ISR(TIMER1_OVF_vect)
   TCNT1 = counterStartValue;
 }
 
-void sendBuffer() {
+void sendBuffer()
+{
   Serial.println("x");
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(map_range(buffer[0][i], 0, 255, -200, 200)/ 100.0);
+  for (int i = 0; i < BUFFER_SIZE; i++)
+  {
+    UART0_transmit_string(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
   }
 
   Serial.println("y");
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(map_range(buffer[1][i], 0, 255, -200, 200)/ 100.0);
+  for (int i = 0; i < BUFFER_SIZE; i++)
+  {
+    UART0_transmit_string(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
   }
 
   Serial.println("z");
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    Serial.println(map_range(buffer[2][i], 0, 255, -200, 200)/ 100.0);
+  for (int i = 0; i < BUFFER_SIZE; i++)
+  {
+    UART0_transmit_string(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
   }
 }
-
-
