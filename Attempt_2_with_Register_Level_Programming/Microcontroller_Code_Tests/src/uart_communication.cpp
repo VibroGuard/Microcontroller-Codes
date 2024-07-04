@@ -3,7 +3,7 @@
 // Function to initialize UART0
 void UART_init(uint32_t baud_rate)
 {
-    uint16_t ubrr_value = (F_CPU / (16 * baud_rate)) - 1;
+    uint16_t ubrr_value = round((F_CLK / (16.0 * baud_rate)) - 1);
 
     // Set baud rate
     UBRR0H = (ubrr_value >> 8);
@@ -13,7 +13,7 @@ void UART_init(uint32_t baud_rate)
     UCSR0B = (1 << RXEN0) | (1 << TXEN0);
 
     // Set frame format: 8 data bits, 1 stop bit, no parity
-    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+    UCSR0C = (1 << UCSZ01) | (3 << UCSZ00);
 }
 
 // Function to transmit a character
@@ -34,6 +34,9 @@ void UART_transmit_string(const char *str)
     {
         UART_transmit(*str++);
     }
+
+    // Write new line.
+    UART_transmit('\n');
 }
 
 // Function to check if serial data is available to be read

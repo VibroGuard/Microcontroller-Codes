@@ -6,9 +6,6 @@
 #define MPU6050_REG_PWR_MGMT_1 0x6B
 #define MPU6050_REG_ACCEL_XOUT_H 0x3B
 
-// MPU6050 functions
-void mpu6050_init(int i2c_address);
-
 // Initializing I2C Connection and MPU6050
 void Accelerometer::begin(int i2c_address)
 {

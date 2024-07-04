@@ -4,6 +4,9 @@
 #include <avr/io.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <cmath>
+
+#define F_CLK 16000000
 
 void UART_init(uint32_t baud_rate);
 void UART_transmit(unsigned char data);

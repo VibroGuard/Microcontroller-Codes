@@ -45,6 +45,11 @@ void setup()
 {
   UART_init(115200);
 
+  // DEBUG
+  UART_transmit('c');
+  UART_transmit_string("hello");
+  UART_transmit('d');
+
   // Pin type declaration.
   PORTB = PORTB | (1 << PORTB0);
 
