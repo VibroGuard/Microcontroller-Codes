@@ -77,7 +77,7 @@ void setup()
     UART_init(115200); // Initialize UART with baud rate 115200
 
     // Pin type declaration
-    PORTB = PORTB | (1 << PORTB0); // Set PORTB0 as output
+    DDRB = DDRB | (1 << PORTB0); // Set PORTB0 as output
 
     accelerometer.begin(MPU); // Initialize accelerometer
 
@@ -121,11 +121,11 @@ void loop()
         // Handle different UART commands
         if (inputSerial == "ALERT")
         {
-            DDRB = (1 << DDB0); // Set PORTB0 as output
+            PORTB = (1 << PORTB0); // Set PORTB0 to HIGH
         }
         else if (inputSerial == "NO_ALERT")
         {
-            DDRB = (0 << DDB0); // Set PORTB0 as input
+            PORTB = (0 << PORTB0); // Set PORTB0 to LOW
         }
     }
 }
