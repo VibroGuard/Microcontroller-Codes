@@ -202,24 +202,27 @@ ISR(TIMER1_OVF_vect)
 // Function to send the buffered data over UART
 void sendBuffer()
 {
-    // Send X-axis data
-    UART_transmit_string_n("x");
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        UART_transmit_string_n(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
-    }
+  UART_transmit_string_n("x");
+  for (int i = 0; i < BUFFER_SIZE; i++)
+  {
+    const char *value_to_transmit = to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0));
+    UART_transmit_string_n(value_to_transmit);
+    delete[] value_to_transmit;
+  }
 
-    // Send Y-axis data
-    UART_transmit_string_n("y");
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        UART_transmit_string_n(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
-    }
+  UART_transmit_string_n("y");
+  for (int i = 0; i < BUFFER_SIZE; i++)
+  {
+    const char *value_to_transmit = to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0));
+    UART_transmit_string_n(value_to_transmit);
+    delete[] value_to_transmit;
+  }
 
-    // Send Z-axis data
-    UART_transmit_string_n("z");
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        UART_transmit_string_n(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
-    }
+  UART_transmit_string_n("z");
+  for (int i = 0; i < BUFFER_SIZE; i++)
+  {
+    const char *value_to_transmit = to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0));
+    UART_transmit_string_n(value_to_transmit);
+    delete[] value_to_transmit;
+  }
 }
