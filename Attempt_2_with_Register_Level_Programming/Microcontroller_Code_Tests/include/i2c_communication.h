@@ -22,17 +22,18 @@
  * THE SOFTWARE.
  */
 
-#ifndef AUXILIARY_FUNCTIONS_H
-#define AUXILIARY_FUNCTIONS_H
+#ifndef I2C_COMMUNICATION_H
+#define I2C_COMMUNICATION_H
 
-#include <avr/interrupt.h>
-#include <string>
-#include <sstream>
-#include <iomanip>
+#include <avr/io.h>
+#include <util/delay.h>
+#include <stdint.h>
 
-float map_range(float value, float prevLimitLower, float prevLimitUpper, float nextLimitLower, float nextLimitUpper);
-const char *to_string(float value);
-void setup_millis_counter();
-unsigned long millis_elapsed();
+// Function declarations related I2C protocol.
+void i2c_init();
+void i2c_start();
+void i2c_stop();
+void i2c_write(uint8_t data);
+uint8_t i2c_read(bool ack);
 
 #endif
