@@ -43,12 +43,9 @@ int main()
 
 void setup()
 {
-  UART_init(115200);
+  setup_millis_counter();
 
-  // DEBUG
-  UART_transmit('c');
-  UART_transmit_string("hello");
-  UART_transmit('d');
+  UART_init(115200);
 
   // Pin type declaration.
   PORTB = PORTB | (1 << PORTB0);
@@ -60,6 +57,9 @@ void setup()
 
 void loop()
 {
+  UART_transmit_string("Running...\t\t");
+  UART_transmit_string(to_string(bufferIndex));
+  UART_transmit_string("\t\t");
   // === Read acceleromter data === //
   struct accComp readings;
   readings = accelerometer.getAcceleration();
@@ -69,8 +69,15 @@ void loop()
   AccY = readings.AccY; // Y-axis value
   AccZ = readings.AccZ; // Z-axis value
 
+  UART_transmit_string(to_string(AccX));
+  UART_transmit_string("\t");
+  UART_transmit_string(to_string(AccY));
+  UART_transmit_string("\t");
+  UART_transmit_string_n(to_string(AccZ));
+
   if (!bufferReady)
   {
+    UART_transmit_string_n("Sending buffer...");
     // Buffer is full. Send data to the computer.
     sendBuffer();
 
@@ -81,6 +88,7 @@ void loop()
 
   if (UART_available())
   {
+    UART_transmit_string_n("Available...");
     char *inputBuffer = NULL;
 
     // Serial.readStringUntil('\n').toCharArray(inputBuffer, buffSize);
@@ -168,21 +176,21 @@ ISR(TIMER1_OVF_vect)
 
 void sendBuffer()
 {
-  UART_transmit_string("x");
+  UART_transmit_string_n("x");
   for (int i = 0; i < BUFFER_SIZE; i++)
   {
-    UART_transmit_string(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
+    UART_transmit_string_n(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
   }
 
-  UART_transmit_string("y");
+  UART_transmit_string_n("y");
   for (int i = 0; i < BUFFER_SIZE; i++)
   {
-    UART_transmit_string(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
+    UART_transmit_string_n(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
   }
 
-  UART_transmit_string("z");
+  UART_transmit_string_n("z");
   for (int i = 0; i < BUFFER_SIZE; i++)
   {
-    UART_transmit_string(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
+    UART_transmit_string_n(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
   }
 }

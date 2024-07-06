@@ -21,7 +21,7 @@ private:
   void readAcceleration();
 
 public:
-  void begin(int i2c_address);
+  void begin(int device_address);
   struct accComp getAcceleration();
 };
 
