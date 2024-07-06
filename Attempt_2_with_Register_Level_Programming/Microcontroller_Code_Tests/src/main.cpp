@@ -57,9 +57,9 @@ void setup()
 
 void loop()
 {
-  UART_transmit_string("Running...\t\t");
-  UART_transmit_string(to_string(bufferIndex));
-  UART_transmit_string("\t\t");
+  // UART_transmit_string("Running...\t\t");
+  // UART_transmit_string(to_string(bufferIndex));
+  // UART_transmit_string("\t\t");
   // === Read acceleromter data === //
   struct accComp readings;
   readings = accelerometer.getAcceleration();
@@ -69,15 +69,15 @@ void loop()
   AccY = readings.AccY; // Y-axis value
   AccZ = readings.AccZ; // Z-axis value
 
-  UART_transmit_string(to_string(AccX));
-  UART_transmit_string("\t");
-  UART_transmit_string(to_string(AccY));
-  UART_transmit_string("\t");
-  UART_transmit_string_n(to_string(AccZ));
+  // UART_transmit_string(to_string(AccX));
+  // UART_transmit_string("\t");
+  // UART_transmit_string(to_string(AccY));
+  // UART_transmit_string("\t");
+  // UART_transmit_string_n(to_string(AccZ));
 
   if (!bufferReady)
   {
-    UART_transmit_string_n("Sending buffer...");
+    // UART_transmit_string_n("Sending buffer...");
     // Buffer is full. Send data to the computer.
     sendBuffer();
 
@@ -88,10 +88,9 @@ void loop()
 
   if (UART_available())
   {
-    UART_transmit_string_n("Available...");
+    // UART_transmit_string_n("Available...");
     char *inputBuffer = NULL;
 
-    // Serial.readStringUntil('\n').toCharArray(inputBuffer, buffSize);
     inputBuffer = UART_receive_string();
 
     string inputSerial = string(inputBuffer);

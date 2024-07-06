@@ -1,7 +1,5 @@
 #include "Accelerometer.h"
 #include "auxiliary_functions.h"
-// #include "i2c_communication.h"
-
 #include "I2C.h"
 
 // MPU6050 registers
@@ -12,6 +10,8 @@
 void Accelerometer::begin(int device_address)
 {
     i2c_address = device_address;
+
+    I2c.timeOut(1000); // Set I2C timeout period, to automatically recover from lockups.
 
     I2c.begin();
     I2c.write(i2c_address, MPU6050_REG_RESET, 0x00);

@@ -72,6 +72,33 @@ void I2C::end()
 
 /*
  *  Description:
+ *      Allows the user to program a time out limit to prevent and recover from
+ *      I2C bus lockups. I2C bus lockups have a tendency to freeze a program
+ *      which typically requires a power cycle to restart your program. This
+ *      allows the user to define a time out in which the I2C will release
+ *      itself and reinitialize and continue on with the next function. Setting
+ *      the value to zero will disable the function. On a side note, be careful
+ *      with setting too low a value because some devices support clock
+ *      stretching which can increase the time before an acknowledgment is sent
+ *      which could be misconstrued as a lockup.
+ *
+ *      If a lock up occurs the returned parameters from Read and/or Writes will
+ *      contain a 1.
+ *
+ *  Parameters:
+ *      timeOut - uint16_t
+ *          The amount of time to wait before timing out. Can range from
+ *          0 - 65535 milliseconds. If it's set to 0 it will be disabled.
+ *  Returns:
+ *      none
+ */
+void I2C::timeOut(uint16_t _timeOut)
+{
+  timeOutDelay = _timeOut;
+}
+
+/*
+ *  Description:
  *      Enables/disables internal pullup resistors
  *  Parameters:
  *      activate - Boolean
