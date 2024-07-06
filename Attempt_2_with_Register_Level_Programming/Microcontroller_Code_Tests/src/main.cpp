@@ -1,19 +1,19 @@
 /*
  * MIT License
- * 
+ *
  * Copyright (c) 2024 Linuka Ratnayake
  * Copyright (c) 2024 Sanuja Rupasinghe
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -82,9 +82,6 @@ void setup()
 
 void loop()
 {
-  // UART_transmit_string("Running...\t\t");
-  // UART_transmit_string(to_string(bufferIndex));
-  // UART_transmit_string("\t\t");
   // === Read acceleromter data === //
   struct accComp readings;
   readings = accelerometer.getAcceleration();
@@ -94,15 +91,8 @@ void loop()
   AccY = readings.AccY; // Y-axis value
   AccZ = readings.AccZ; // Z-axis value
 
-  // UART_transmit_string(to_string(AccX));
-  // UART_transmit_string("\t");
-  // UART_transmit_string(to_string(AccY));
-  // UART_transmit_string("\t");
-  // UART_transmit_string_n(to_string(AccZ));
-
   if (!bufferReady)
   {
-    // UART_transmit_string_n("Sending buffer...");
     // Buffer is full. Send data to the computer.
     sendBuffer();
 
@@ -113,7 +103,6 @@ void loop()
 
   if (UART_available())
   {
-    // UART_transmit_string_n("Available...");
     char *inputBuffer = NULL;
 
     inputBuffer = UART_receive_string();
