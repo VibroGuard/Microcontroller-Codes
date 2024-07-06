@@ -30,6 +30,7 @@
 #include "auxiliary_functions.h"
 #include "uart_communication.h"
 
+// Definitions for clock frequency and limits
 #define CLOCK_FREQUENCY 16000000
 #define FREQUENCY_LOWER_LIMIT 1
 #define FREQUENCY_UPPER_LIMIT 1000
@@ -41,6 +42,7 @@ using namespace std;
 
 const int MPU = 0x68; // MPU6050 I2C address
 
+// Global variables for accelerometer data and buffer management
 volatile uint8_t AccX = 0, AccY = 0, AccZ = 0;
 volatile uint8_t buffer[3][BUFFER_SIZE];
 volatile bool bufferReady = true;
@@ -50,6 +52,7 @@ int counterStartValue;
 
 Accelerometer accelerometer;
 
+// Function declarations
 void setSamplingFrequency(int frequency);
 void printBuffer();
 void sendBuffer();
@@ -58,152 +61,165 @@ void loop();
 
 int main()
 {
-  setup();
+    setup();
 
-  while (true)
-    loop();
+    while (true)
+        loop();
 
-  return 0;
+    return 0;
 }
 
+// Setup function to initialize peripherals and variables
 void setup()
 {
-  setup_millis_counter();
+    setup_millis_counter(); // Initialize millisecond counter
 
-  UART_init(115200);
+    UART_init(115200); // Initialize UART with baud rate 115200
 
-  // Pin type declaration.
-  PORTB = PORTB | (1 << PORTB0);
+    // Pin type declaration
+    PORTB = PORTB | (1 << PORTB0); // Set PORTB0 as output
 
-  accelerometer.begin(MPU);
+    accelerometer.begin(MPU); // Initialize accelerometer
 
-  setSamplingFrequency(SAMPLING_FREQUENCY);
+    // Set the sampling frequency for data collection
+    setSamplingFrequency(SAMPLING_FREQUENCY); 
 }
 
+// Main loop function to continuously read accelerometer data and handle UART communication
 void loop()
 {
-  // === Read acceleromter data === //
-  struct accComp readings;
-  readings = accelerometer.getAcceleration();
+    // Read accelerometer data
+    struct accComp readings;
+    readings = accelerometer.getAcceleration();
 
-  // //For a range of +-2g, we need to divide the raw values by 16384, according to the datasheet
-  AccX = readings.AccX; // X-axis value
-  AccY = readings.AccY; // Y-axis value
-  AccZ = readings.AccZ; // Z-axis value
+    // Store accelerometer readings in global variables
+    AccX = readings.AccX; // X-axis value
+    AccY = readings.AccY; // Y-axis value
+    AccZ = readings.AccZ; // Z-axis value
 
-  if (!bufferReady)
-  {
-    // Buffer is full. Send data to the computer.
-    sendBuffer();
-
-    // Reset the buffer
-    bufferIndex = 0;
-    bufferReady = true;
-  }
-
-  if (UART_available())
-  {
-    char *inputBuffer = NULL;
-
-    inputBuffer = UART_receive_string();
-
-    string inputSerial = string(inputBuffer);
-
-    if (inputSerial == "ALERT")
+    // Check if buffer is full and ready to be sent
+    if (!bufferReady)
     {
-      DDRB = (1 << DDB0);
+        // Buffer is full. Send data to the computer.
+        sendBuffer();
+
+        // Reset the buffer
+        bufferIndex = 0;
+        bufferReady = true;
     }
-    else if (inputSerial == "NO_ALERT")
+
+    // Check for incoming UART data
+    if (UART_available())
     {
-      DDRB = (0 << DDB0);
+        char *inputBuffer = NULL;
+
+        inputBuffer = UART_receive_string(); // Receive string from UART
+
+        // Convert received string to std::string
+        string inputSerial = string(inputBuffer); 
+
+        // Handle different UART commands
+        if (inputSerial == "ALERT")
+        {
+            DDRB = (1 << DDB0); // Set PORTB0 as output
+        }
+        else if (inputSerial == "NO_ALERT")
+        {
+            DDRB = (0 << DDB0); // Set PORTB0 as input
+        }
     }
-  }
 }
 
+// Function to set the sampling frequency using timer interrupts
 void setSamplingFrequency(int frequency)
 {
-  // The following are internal registers in ATmega328.
-  // Internal interrupts (Timers) are used to keep track of time precisely.
+    // Ensure frequency is within the defined limits
+    if (frequency < FREQUENCY_LOWER_LIMIT)
+    {
+        frequency = FREQUENCY_LOWER_LIMIT;
+    }
+    if (frequency > FREQUENCY_UPPER_LIMIT)
+    {
+        frequency = FREQUENCY_UPPER_LIMIT;
+    }
 
-  // Adding lower and upper limits to frequency
-  if (frequency < FREQUENCY_LOWER_LIMIT)
-  {
-    frequency = FREQUENCY_LOWER_LIMIT;
-  }
-  if (frequency > FREQUENCY_UPPER_LIMIT)
-  {
-    frequency = FREQUENCY_UPPER_LIMIT;
-  }
+    TCCR1A = 0;
+    TCCR1B = 0;
 
-  TCCR1A = 0;
-  TCCR1B = 0;
+    // Calculate suitable prescaler values based on the frequency
+    int prescaler;
+    if (frequency <= 10)
+    {
+        prescaler = 256;
+        TCCR1B |= (1 << CS12);
+    }
+    else if (frequency <= 50)
+    {
+        prescaler = 64;
+        TCCR1B |= (1 << CS10) | (1 << CS11);
+    }
+    else if (frequency <= 500)
+    {
+        prescaler = 8;
+        TCCR1B |= (1 << CS11);
+    }
+    else
+    {
+        prescaler = 1;
+        TCCR1B |= (1 << CS10);
+    }
 
-  // Calculating suitable prescalar values.
-  int prescaler;
-  if (frequency <= 10)
-  {
-    prescaler = 256;
-    TCCR1B |= (1 << CS12);
-  }
-  else if (frequency <= 50)
-  {
-    prescaler = 64;
-    TCCR1B |= (1 << CS10) | (1 << CS11);
-  }
-  else if (frequency <= 500)
-  {
-    prescaler = 8;
-    TCCR1B |= (1 << CS11);
-  }
-  else
-  {
-    prescaler = 1;
-    TCCR1B |= (1 << CS10);
-  }
+    // Calculate the counter start value based on the prescaler and frequency
+    counterStartValue = 65536 - CLOCK_FREQUENCY / prescaler / frequency;
+    TCNT1 = counterStartValue;
 
-  // Calculating the value the counter should start counting from.
-  counterStartValue = 65536 - CLOCK_FREQUENCY / prescaler / frequency;
-  TCNT1 = counterStartValue;
-
-  // Enabling timer interrupts.
-  TIMSK1 |= (1 << TOIE1);
+    // Enable timer interrupts
+    TIMSK1 |= (1 << TOIE1);
 }
 
+// Timer1 overflow interrupt service routine
 ISR(TIMER1_OVF_vect)
 {
-  if (bufferReady)
-  {
-    buffer[0][bufferIndex] = AccX;
-    buffer[1][bufferIndex] = AccY;
-    buffer[2][bufferIndex] = AccZ;
-
-    bufferIndex++;
-    if (bufferIndex == BUFFER_SIZE)
+    // Check if the buffer is ready to be filled
+    if (bufferReady)
     {
-      bufferReady = false;
-    }
-  }
+        buffer[0][bufferIndex] = AccX;
+        buffer[1][bufferIndex] = AccY;
+        buffer[2][bufferIndex] = AccZ;
 
-  TCNT1 = counterStartValue;
+        bufferIndex++;
+        // Check if the buffer is full
+        if (bufferIndex == BUFFER_SIZE)
+        {
+            bufferReady = false;
+        }
+    }
+
+    // Reset the counter to the start value
+    TCNT1 = counterStartValue;
 }
 
+// Function to send the buffered data over UART
 void sendBuffer()
 {
-  UART_transmit_string_n("x");
-  for (int i = 0; i < BUFFER_SIZE; i++)
-  {
-    UART_transmit_string_n(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
-  }
+    // Send X-axis data
+    UART_transmit_string_n("x");
+    for (int i = 0; i < BUFFER_SIZE; i++)
+    {
+        UART_transmit_string_n(to_string((map_range(buffer[0][i], 0, 255, -200, 200) / 100.0)));
+    }
 
-  UART_transmit_string_n("y");
-  for (int i = 0; i < BUFFER_SIZE; i++)
-  {
-    UART_transmit_string_n(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
-  }
+    // Send Y-axis data
+    UART_transmit_string_n("y");
+    for (int i = 0; i < BUFFER_SIZE; i++)
+    {
+        UART_transmit_string_n(to_string((map_range(buffer[1][i], 0, 255, -200, 200) / 100.0)));
+    }
 
-  UART_transmit_string_n("z");
-  for (int i = 0; i < BUFFER_SIZE; i++)
-  {
-    UART_transmit_string_n(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
-  }
+    // Send Z-axis data
+    UART_transmit_string_n("z");
+    for (int i = 0; i < BUFFER_SIZE; i++)
+    {
+        UART_transmit_string_n(to_string((map_range(buffer[2][i], 0, 255, -200, 200) / 100.0)));
+    }
 }

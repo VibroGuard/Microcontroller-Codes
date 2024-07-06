@@ -24,24 +24,27 @@
 
 #include "auxiliary_functions.h"
 
+// Function to map a value from one range to another
 float map_range(float value, float prevLimitLower, float prevLimitUpper, float nextLimitLower, float nextLimitUpper)
 {
     return nextLimitLower + ((value - prevLimitLower) / (prevLimitUpper - prevLimitLower) * (nextLimitUpper - nextLimitLower));
 }
 
+// Function to convert a float value to a C-string with two decimal places
 const char *to_string(float value)
 {
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << value; // Formatting to two decimal places
+    ss << std::fixed << std::setprecision(2) << value; // Format the float to two decimal places
     std::string str = ss.str();                        // Store the result in a std::string
-    char *cstr = new char[str.length() + 1];           // +1 for null terminator
-    std::copy(str.begin(), str.end(), cstr);           // Copy characters
-    cstr[str.length()] = '\0';                         // Null terminator
+    char *cstr = new char[str.length() + 1];           // Allocate memory for the C-string (+1 for null terminator)
+    std::copy(str.begin(), str.end(), cstr);           // Copy characters from std::string to C-string
+    cstr[str.length()] = '\0';                         // Add null terminator
     return cstr;                                       // Return the C-string
 }
 
-volatile unsigned long timer0_millis_ = 0;
+volatile unsigned long timer0_millis_ = 0; // Variable to store elapsed milliseconds
 
+// Function to configure Timer0 for counting milliseconds
 void setup_millis_counter()
 {
     // Configure Timer0
@@ -49,7 +52,7 @@ void setup_millis_counter()
     TCCR0A = 0;
     TCCR0B = 0;
 
-    // Set compare match register to desired timer count
+    // Set compare match register to desired timer count (250 ticks with a prescaler of 64)
     OCR0A = 249; // Timer0 counts 250 ticks (prescaler is 64)
 
     // Enable Timer0 compare match A interrupt
@@ -65,15 +68,16 @@ void setup_millis_counter()
 // Timer0 compare match A interrupt service routine
 ISR(TIMER0_COMPA_vect)
 {
-    timer0_millis_++;
+    timer0_millis_++; // Increment the millisecond counter
 }
 
+// Function to get the elapsed milliseconds since Timer0 was configured
 unsigned long millis_elapsed()
 {
     unsigned long millis;
     // Ensure consistent reading (interrupts should be disabled when reading)
-    cli();
-    millis = timer0_millis_;
-    sei();
-    return millis;
+    cli();                  // Disable interrupts
+    millis = timer0_millis_; // Read the millisecond counter
+    sei();                  // Enable interrupts
+    return millis;          // Return the elapsed milliseconds
 }

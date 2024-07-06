@@ -30,49 +30,51 @@
 #define MPU6050_REG_RESET 0x6B
 #define MPU6050_REG_ACCEL_XOUT_H 0x3B
 
-// Initializing I2C Connection and MPU6050
+// Function to initialize the I2C connection and MPU6050
 void Accelerometer::begin(int device_address)
 {
-    i2c_address = device_address;
+    i2c_address = device_address; // Set the device address for I2C communication
 
-    I2c.timeOut(1000); // Set I2C timeout period, to automatically recover from lockups.
+    I2c.timeOut(1000); // Set I2C timeout period to 1000ms, to automatically recover from lockups
 
-    I2c.begin();
-    I2c.write(i2c_address, MPU6050_REG_RESET, 0x00);
-    I2c.end();
+    I2c.begin(); // Initialize the I2C communication
+    I2c.write(i2c_address, MPU6050_REG_RESET, 0x00); // Write 0x00 to the MPU6050_REG_RESET register to reset the MPU6050
+    I2c.end(); // End the I2C communication
 }
 
+// Function to read acceleration values from the MPU6050
 void Accelerometer::readAcceleration()
 {
-    int16_t rawAccX, rawAccY, rawAccZ;
+    int16_t rawAccX, rawAccY, rawAccZ; // Variables to store raw acceleration data
 
-    I2c.begin();
-    I2c.read(i2c_address, MPU6050_REG_ACCEL_XOUT_H, 6); // read 6 bytes (x,y,z) from the device
+    I2c.begin(); // Initialize the I2C communication
+    I2c.read(i2c_address, MPU6050_REG_ACCEL_XOUT_H, 6); // Read 6 bytes (x, y, z) from the MPU6050
 
-    // Read raw data
+    // Read raw acceleration data from the I2C buffer
     rawAccX = (I2c.receive() << 8) | (I2c.receive());
     rawAccY = (I2c.receive() << 8) | (I2c.receive());
     rawAccZ = (I2c.receive() << 8) | (I2c.receive());
 
-    I2c.end();
+    I2c.end(); // End the I2C communication
 
     // Convert raw data to g-force (for ±2g range)
-    const float accScale = 16384.0;
-    accX = (float)rawAccX / accScale;
-    accY = (float)rawAccY / accScale;
-    accZ = (float)rawAccZ / accScale;
+    const float accScale = 16384.0; // Scaling factor for accelerometer
+    accX = (float)rawAccX / accScale; // Convert raw X data to g-force
+    accY = (float)rawAccY / accScale; // Convert raw Y data to g-force
+    accZ = (float)rawAccZ / accScale; // Convert raw Z data to g-force
 }
 
+// Function to get acceleration values and map them to a 0-255 range
 struct accComp Accelerometer::getAcceleration()
 {
-    readAcceleration();
+    readAcceleration(); // Read the current acceleration values
 
-    struct accComp readings;
+    struct accComp readings; // Structure to store the mapped acceleration values
 
     // Map accelerometer values to 0-255 range
     readings.AccX = (uint8_t)map_range(accX * 100, -200, 200, 0, 255);
     readings.AccY = (uint8_t)map_range(accY * 100, -200, 200, 0, 255);
     readings.AccZ = (uint8_t)map_range(accZ * 100, -200, 200, 0, 255);
 
-    return readings;
+    return readings; // Return the mapped acceleration values
 }

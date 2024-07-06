@@ -42,7 +42,8 @@ void loop() {
   struct accComp readings;
   readings = accelerometer.getAcceleration();
 
-  // //For a range of +-2g, we need to divide the raw values by 16384, according to the datasheet
+  //For a range of +-2g, we need to divide the 
+  //raw values by 16384, according to the datasheet
   AccX = readings.AccX; // X-axis value
   AccY = readings.AccY; // Y-axis value
   AccZ = readings.AccZ; // Z-axis value

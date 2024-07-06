@@ -50,6 +50,7 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "clocale": "cpp"
     }
 }
