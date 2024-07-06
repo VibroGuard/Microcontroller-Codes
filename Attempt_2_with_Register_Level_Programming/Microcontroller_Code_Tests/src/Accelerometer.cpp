@@ -24,42 +24,37 @@
 
 #include "Accelerometer.h"
 #include "auxiliary_functions.h"
-#include "i2c_communication.h"
+// #include "i2c_communication.h"
+
+#include "I2C.h"
 
 // MPU6050 registers
-#define MPU6050_REG_PWR_MGMT_1 0x6B
+#define MPU6050_REG_RESET 0x6B
 #define MPU6050_REG_ACCEL_XOUT_H 0x3B
 
 // Initializing I2C Connection and MPU6050
-void Accelerometer::begin(int i2c_address)
+void Accelerometer::begin(int device_address)
 {
-    i2c_init(); // Initialize I2C
+    i2c_address = device_address;
 
-    i2c_start();
-    i2c_write(i2c_address << 1); // Write mode
-    i2c_write(MPU6050_REG_PWR_MGMT_1);
-    i2c_write(0); // Clear sleep mode bit
-    i2c_stop();
+    I2c.begin();
+    I2c.write(i2c_address, MPU6050_REG_RESET, 0x00);
+    I2c.end();
 }
 
 void Accelerometer::readAcceleration()
 {
     int16_t rawAccX, rawAccY, rawAccZ;
 
-    i2c_start();
-    i2c_write(i2c_address << 1); // Write mode
-    i2c_write(MPU6050_REG_ACCEL_XOUT_H);
-    i2c_stop();
-
-    i2c_start();
-    i2c_write((i2c_address << 1) | 1); // Read mode
+    I2c.begin();
+    I2c.read(i2c_address, MPU6050_REG_ACCEL_XOUT_H, 6); // read 6 bytes (x,y,z) from the device
 
     // Read raw data
-    rawAccX = (i2c_read(true) << 8) | (i2c_read(true));
-    rawAccY = (i2c_read(true) << 8) | (i2c_read(true));
-    rawAccZ = (i2c_read(true) << 8) | (i2c_read(false));
+    rawAccX = (I2c.receive() << 8) | (I2c.receive());
+    rawAccY = (I2c.receive() << 8) | (I2c.receive());
+    rawAccZ = (I2c.receive() << 8) | (I2c.receive());
 
-    i2c_stop();
+    I2c.end();
 
     // Convert raw data to g-force (for ±2g range)
     const float accScale = 16384.0;

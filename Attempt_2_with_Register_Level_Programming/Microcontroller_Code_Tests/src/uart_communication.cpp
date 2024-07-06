@@ -27,7 +27,7 @@
 // Function to initialize UART0
 void UART_init(uint32_t baud_rate)
 {
-    uint16_t ubrr_value = round((F_CLK / (16.0 * baud_rate)) - 1);
+    uint16_t ubrr_value = round((F_CPU / (16.0 * baud_rate)) - 1);
 
     // Set baud rate
     UBRR0H = (ubrr_value >> 8);
@@ -58,6 +58,12 @@ void UART_transmit_string(const char *str)
     {
         UART_transmit(*str++);
     }
+}
+
+// Function to transmit a string with '\n' at the end
+void UART_transmit_string_n(const char *str)
+{
+    UART_transmit_string(str);
 
     // Write new line.
     UART_transmit('\n');

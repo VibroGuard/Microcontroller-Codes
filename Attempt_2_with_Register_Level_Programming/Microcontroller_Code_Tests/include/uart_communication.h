@@ -30,11 +30,10 @@
 #include <stdlib.h>
 #include <cmath>
 
-#define F_CLK 16000000
-
 void UART_init(uint32_t baud_rate);
 void UART_transmit(unsigned char data);
 void UART_transmit_string(const char *str);
+void UART_transmit_string_n(const char *str);
 bool UART_available(void);
 char UART_receive(void);
 char *UART_receive_string(void);
